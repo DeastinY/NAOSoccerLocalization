@@ -6,7 +6,7 @@
 
 /* 
  * File:   Localization.cpp
- * Author: lila7
+ * Author: lschulzedephoff
  * 
  * Created on 22. November 2016, 12:35
  */
@@ -18,6 +18,8 @@
 POMDPMCLocalization::POMDPMCLocalization() {
     running = true;
     epsilon = 0.2;
+    gamma = 0.2;
+    s = 0;
 }
 
 POMDPMCLocalization::POMDPMCLocalization(const POMDPMCLocalization& orig) {
@@ -27,15 +29,47 @@ POMDPMCLocalization::~POMDPMCLocalization() {
 }
 
 int POMDPMCLocalization::Search(std::list h){
-/*   while(running){
+   while(running){
         if(h.empty()){
-            s ~ I
+            s = 1/h.size();
         }else{
-            s ~ B(h)
+            s = 0;//should be ~ B(h) - TODO
         }
-        Localization::Simulate(s, h, 0);
+        POMDPMCLocalization::Simulate(s, h, 0);
     }    
-    return argmax V(hb)*/
+    return 0;//should be argmax V(hb) -TODO
+}
+
+int POMDPMCLocalization::Rollout(State s, std::list h, int depth){
+    if(std::pow(gamma,depth) < epsilon){
+        return 0;
+    }
+/*
+a ~ PIrollout(h,.)
+(s1, o, r) ~ G(s, a)
+return r + Rollout(s1, hao, depth+1);*/
+}
+
+int POMDPMCLocalization::Simulate(State s, std::list h, int depth){
+    if(std::pow(gamma,depth) < epsilon){
+        return 0;
+    }
+  /*
+    if(h != T){
+        for(all a from A ){
+            T(ha)<--(Ninit(ha), Vinit(ha),null);
+        }
+        return POMDPMCLocalization::Rollout(s, h, depth);
+    }
+    a<--argmax V(hb) + c sqrt(logN(h)/N(hb))
+    (s1; o; r) ~ G(s; a)
+    R<-- r + POMDPMCLocalization::Simulate(s0, hao, depth + 1);
+    B(h)<--B(h) U {s}
+    N(h)<-- N(h) + 1
+    N(ha)<-- N(ha) + 1
+    V (ha) <--  V (ha) + (R-V(ha)/N(ha))
+    return R;
+  * */
 }
 
 int POMDPMCLocalization::Rollout(State s, std::list h, int depth){
