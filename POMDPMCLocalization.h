@@ -6,7 +6,7 @@
 
 /* 
  * File:   Localization.h
- * Author: lila7
+ * Author: lschulzedephoff
  *
  * Created on 22. November 2016, 12:35
  */
@@ -17,6 +17,8 @@
 class POMDPMCLocalization {
     static int running;
     static double epsilon;
+    static double gamma;
+    static State s;
 public:
     POMDPMCLocalization();
     POMDPMCLocalization(const POMDPMCLocalization& orig);
