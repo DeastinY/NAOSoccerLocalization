@@ -21,6 +21,20 @@ def initial_mean_values():
     print('See research/bolotnikova_thesis.pdf')
 
 
+def lower_corner(image):
+    height, width, depth = image.shape
+
+    def calc(left):
+        for w in range(width-1):
+            w = w if left else width - w - 1
+            for h in range(height-1):
+                h = height - h - 1
+                if sum(image[h, w]) == 0:
+                    return w, h  # no idea why the swap is needed here. Maybe numpy vs openCV ?
+
+    return calc(True), calc(False)
+
+
 def tarvas_geometric(raw_image):
     # resize
     image = cv2.resize(raw_image, (0, 0), fx=0.5, fy=0.5)
@@ -35,14 +49,16 @@ def tarvas_geometric(raw_image):
     kernel = np.ones((10, 10), np.uint8)  # magic number 10 from paper
     mask = cv2.erode(mask, kernel)
     mask = cv2.dilate(mask, kernel)
+    masked = cv2.bitwise_and(image, image, mask=mask)
     # corner detection
-    epsilon_snap = 20  # magic number 20 from paper
-
+    epsilon_snap = 20  # magic number 20 from pape
+    lowc_l, lowc_r = lower_corner(masked)
+    cv2.circle(masked, lowc_l, 3, color=(255, 0, 0), thickness=3)
+    cv2.circle(masked, lowc_r, 3, color=(255, 0, 0), thickness=3)
 
     # visualize results
     cv2.imshow('original', raw_image)
-    output = cv2.bitwise_and(image, image, mask=mask)
-    cv2.imshow('overlay', output)
+    cv2.imshow('overlay', masked)
     cv2.waitKey(0)
     cv2.destroyAllWindows()
 
