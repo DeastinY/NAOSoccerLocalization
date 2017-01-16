@@ -35,6 +35,25 @@ def lower_corner(image):
     return calc(True), calc(False)
 
 
+def highest_corner(image, lowc):
+    '''This algorithm checks the pixels above the low corner points whether a colored pixel can be found within
+    the snap radius of 20 pixels. The highest of those pixels are then returned. '''
+    height, width, depth = image.shape
+    epsilon_snap = 20  # magic number 20 from pape
+    results = []
+    for l in lowc:
+        w, h = l
+        highest = h
+        while h > 0:
+            h -= 1
+            if sum(image[h, w]) > 0:
+                highest = h
+            elif abs(h-highest) > 20:
+                break
+        results.append((w, highest))
+    return results
+
+
 def tarvas_geometric(raw_image):
     # resize
     image = cv2.resize(raw_image, (0, 0), fx=0.5, fy=0.5)
@@ -51,12 +70,14 @@ def tarvas_geometric(raw_image):
     mask = cv2.dilate(mask, kernel)
     masked = cv2.bitwise_and(image, image, mask=mask)
     # corner detection
-    epsilon_snap = 20  # magic number 20 from pape
-    lowc_l, lowc_r = lower_corner(masked)
-    cv2.circle(masked, lowc_l, 3, color=(255, 0, 0), thickness=3)
-    cv2.circle(masked, lowc_r, 3, color=(255, 0, 0), thickness=3)
+    lowc = lower_corner(masked)
+    highc = highest_corner(masked, lowc)
 
     # visualize results
+    cv2.circle(masked, lowc[0], 3, color=(255, 0, 0), thickness=3)
+    cv2.circle(masked, lowc[1], 3, color=(255, 0, 0), thickness=3)
+    cv2.circle(masked, highc[0], 3, color=(255, 0, 0), thickness=3)
+    cv2.circle(masked, highc[1], 3, color=(255, 0, 0), thickness=3)
     cv2.imshow('original', raw_image)
     cv2.imshow('overlay', masked)
     cv2.waitKey(0)
