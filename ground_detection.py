@@ -25,12 +25,12 @@ def lower_corner(image):
     height, width, depth = image.shape
 
     def calc(left):
-        for w in range(width-1):
-            w = w if left else width - w - 1
-            for h in range(height-1):
-                h = height - h - 1
-                if sum(image[h, w]) == 0:
-                    return w, h  # no idea why the swap is needed here. Maybe numpy vs openCV ?
+        for x in range(width-1):
+            x = x if left else width - x - 1
+            for y in range(height-1):
+                y = height - y - 1
+                if sum(image[y, x]) == 0:
+                    return x, y  # no idea why the swap is needed here. Maybe numpy vs openCV ?
 
     return calc(True), calc(False)
 
@@ -38,19 +38,18 @@ def lower_corner(image):
 def highest_corner(image, lowc):
     '''This algorithm checks the pixels above the low corner points whether a colored pixel can be found within
     the snap radius of 20 pixels. The highest of those pixels are then returned. '''
-    height, width, depth = image.shape
     epsilon_snap = 20  # magic number 20 from pape
     results = []
     for l in lowc:
-        w, h = l
-        highest = h
-        while h > 0:
-            h -= 1
-            if sum(image[h, w]) > 0:
-                highest = h
-            elif abs(h-highest) > 20:
+        x, y = l
+        max_y = y
+        while y > 0:
+            y -= 1
+            if sum(image[y, x]) > 0:
+                max_y = y
+            elif abs(y-max_y) > epsilon_snap:
                 break
-        results.append((w, highest))
+        results.append((x, max_y))
     return results
 
 
