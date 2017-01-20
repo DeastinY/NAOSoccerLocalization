@@ -30,7 +30,7 @@ def lower_corner(image):
             x = x if left else width - x - 1
             for y in range(height-1):
                 y = height - y - 1
-                if sum(image[y, x]) == 0:
+                if sum(image[y, x]) != 0:
                     return x, y  # no idea why the swap is needed here. Maybe numpy vs openCV ?
 
     return calc(True), calc(False)
@@ -121,9 +121,13 @@ def tarvas_geometric(raw_image):
     cv2.circle(masked, highc[1], 3, color=(128, 128, 0), thickness=3)  # A in paper (blue-green)
     cv2.circle(masked, sl, 3, color=(0, 0, 255), thickness=3)  # S in paper (red)
     cv2.circle(masked, sr, 3, color=(0, 0, 255), thickness=3)  # S in paper (red)
-    #cv2.circle(masked, ml, 3, color=(0, 128, 128), thickness=3)  # M in paper (olive)
-    #cv2.circle(masked, mr, 3, color=(0, 128, 128), thickness=3)  # M in paper (olive)
+    cv2.circle(masked, ml, 3, color=(0, 128, 128), thickness=3)  # M in paper (olive)
+    cv2.circle(masked, mr, 3, color=(0, 128, 128), thickness=3)  # M in paper (olive)
     cv2.line(masked, (mid, 0), (mid, 10000), color=(0, 0, 255))
+    points = np.array([lowc[0], highc[0], sl, ml, mr, sr, highc[1], lowc[1]])
+    overlay = masked.copy()
+    cv2.fillPoly(overlay, np.int32([points]), color=(255, 255, 255, 33))
+    masked = cv2.addWeighted(overlay, 0.3, masked, 0.7,0)
     cv2.imshow('original', raw_image)
     cv2.imshow('masked', masked)
     cv2.waitKey(0)
