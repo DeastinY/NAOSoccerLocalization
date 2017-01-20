@@ -142,7 +142,7 @@ def tarvas_geometric(raw_image, visualize):
 
 
 if __name__ == '__main__':
-    img = cv2.imread('6.jpg', cv2.IMREAD_COLOR)
+    img = cv2.imread('7.jpg', cv2.IMREAD_COLOR)
     tarvas_geometric(img, True)
     cap = cv2.VideoCapture('vid.mp4')
     factor = 1
