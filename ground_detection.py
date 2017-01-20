@@ -69,6 +69,19 @@ def calculate_weights(image, mid):
     return weights
 
 
+def get_max_weights(weights, mid):
+    sl, sr = 0, 0
+    it = np.nditer(weights, flags=['multi_index'])
+    while not it.finished:
+        if it.multi_index[0] < mid:
+            sl = it[0] if it[0] > sl else sl
+        else:
+            sr = it[0] if it[0] > sr else sr
+        it.iternext()
+    sl, sr = float(sl), float(sr)
+    return sl, sr
+
+
 def tarvas_geometric(raw_image):
     # resize
     image = cv2.resize(raw_image, (0, 0), fx=0.5, fy=0.5)
@@ -89,6 +102,7 @@ def tarvas_geometric(raw_image):
     highc = highest_corner(masked, lowc)
     mid = (lowc[0][0]+lowc[1][0])/2
     weights = calculate_weights(masked, mid)
+    sl, sr = get_max_weights(weights, mid)
 
     # visualize results
     cv2.circle(masked, lowc[0], 3, color=(255, 0, 0), thickness=3)
