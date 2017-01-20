@@ -10,6 +10,7 @@
 # Bol15 : Anastasia Bolotnikova:
 #  Melioration of color calibration, goal detection and self-localization systems of nao humanoid robots, 2015
 import cv2
+import math
 import numpy as np
 
 
@@ -36,8 +37,8 @@ def lower_corner(image):
 
 
 def highest_corner(image, lowc):
-    '''This algorithm checks the pixels above the low corner points whether a colored pixel can be found within
-    the snap radius of 20 pixels. The highest of those pixels are then returned. '''
+    """This algorithm checks the pixels above the low corner points whether a colored pixel can be found within
+    the snap radius of 20 pixels. The highest of those pixels are then returned. """
     epsilon_snap = 20  # magic number 20 from pape
     results = []
     for l in lowc:
@@ -51,6 +52,21 @@ def highest_corner(image, lowc):
                 break
         results.append((x, max_y))
     return results
+
+
+def calculate_weights(image, mid):
+    height, width, depth = image.shape
+    weights = np.zeros((width, height), np.float32)
+    for x in range(width):
+        for y in range(height):
+            if x < mid:
+                d = math.sqrt((width-1-x)**2+y**2)
+                w = math.sqrt(y)/d
+            else:
+                d = math.sqrt(x ** 2 + y ** 2)
+                w = math.sqrt(y) / d
+            weights[x, y] = w
+    return weights
 
 
 def tarvas_geometric(raw_image):
@@ -71,12 +87,15 @@ def tarvas_geometric(raw_image):
     # corner detection
     lowc = lower_corner(masked)
     highc = highest_corner(masked, lowc)
+    mid = (lowc[0][0]+lowc[1][0])/2
+    weights = calculate_weights(masked, mid)
 
     # visualize results
     cv2.circle(masked, lowc[0], 3, color=(255, 0, 0), thickness=3)
     cv2.circle(masked, lowc[1], 3, color=(255, 0, 0), thickness=3)
     cv2.circle(masked, highc[0], 3, color=(255, 0, 0), thickness=3)
     cv2.circle(masked, highc[1], 3, color=(255, 0, 0), thickness=3)
+    cv2.line(masked, (mid, 0), (mid, 10000), color=(0, 0, 255))
     cv2.imshow('original', raw_image)
     cv2.imshow('overlay', masked)
     cv2.waitKey(0)
