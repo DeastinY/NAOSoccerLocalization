@@ -137,7 +137,7 @@ def tarvas_geometric(raw_image, visualize):
         cv2.imshow('result', image)
         cv2.waitKey(0)
         cv2.destroyAllWindows()
-    return image
+    return image, masked
 
 
 def test_image():
@@ -154,7 +154,7 @@ def test_video():
             break
         try:
             tarvas = frame
-            tarvas = tarvas_geometric(frame, False)
+            tarvas, _ = tarvas_geometric(frame, False)
             tarvas = cv2.resize(tarvas, (0, 0), fx=factor, fy=factor)
         except:
             print('error')
@@ -164,6 +164,21 @@ def test_video():
     cap.release()
     cv2.destroyAllWindows()
 
+stored_masked = None
+def analyse_image(image):
+    global stored_masked
+    _, stored_masked = tarvas_geometric(image, False)
+
+def check_point(x, y):
+    global stored_masked
+    if sum(stored_masked[y, x]) != 0:
+        return True
+    else:
+        return False
+
+
 
 if __name__ == '__main__':
-    test_image()
+    #test_image()
+    analyse_image(cv2.imread('images/1.jpg', cv2.IMREAD_COLOR))
+    print(check_point(0, 0))
