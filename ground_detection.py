@@ -13,7 +13,6 @@ import cv2
 import math
 import numpy as np
 
-
 def histogram_normalization():
     print('See research/RAS09-sridharan.pdf')
 
@@ -38,12 +37,12 @@ def lower_corner(image):
     return calc(True), calc(False)
 
 
-def highest_corner(image, lowc):
+def highest_corner(image, ll, lr):
     """This algorithm checks the pixels above the low corner points whether a colored pixel can be found within
     the snap square of 20 pixels. The highest of those pixels are then returned. """
     epsilon_snap = 20  # magic number 20 from pape
     results = []
-    for l in lowc:
+    for l in (ll, lr):
         x, y = l
         max_y = y
         while y > 0:  #todo: change to snap to points left and right as well
@@ -80,8 +79,8 @@ def get_weighted_edges(image, mid):
 
 
 def get_minima(image, mid):
-    ml, mr = (0, 10**10), (0, 10**10)
     height, width, depth = image.shape
+    ml, mr = (0, height), (0, height)
     for y in range(height - 1):
         for x in range(width - 1):
             if sum(image[y, x]) != 0:
@@ -92,45 +91,45 @@ def get_minima(image, mid):
     return ml, mr
 
 
-def tarvas_geometric(raw_image, visualize):
-    # resize
-    f = 0.3  # in the paper 1/3 is used
-    image = cv2.resize(raw_image, (0, 0), fx=f, fy=f)
+def color_treshold(image):
     # color thresholding
     image_hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
     color = 145 // 2  # green to hue
-    dx = 33
+    dx = 30
     lower_green = np.array([max(0, color-dx), 100, 100])
     upper_green = np.array([max(0, color+dx), 255, 255])
     mask = cv2.inRange(image_hsv, lower_green, upper_green)
     if mask.max() == 0:
         raise Exception('Could not detect any green')
-    # erode and dilate
+    return mask
+
+
+def smooth_image(image):
     kernel = np.ones((10, 10), np.uint8)  # magic number 10 from paper
-    mask = cv2.erode(mask, kernel)
-    mask = cv2.dilate(mask, kernel)
+    image = cv2.erode(image, kernel)
+    image = cv2.dilate(image, kernel)
+    return image
+
+def tarvas_geometric(raw_image, visualize):
+    f = 0.3  # in the paper 1/3 is used
+    image = cv2.resize(raw_image, (0, 0), fx=f, fy=f)
+    mask = color_treshold(image)
+    mask = smooth_image(mask)
     masked = cv2.bitwise_and(image, image, mask=mask)
-    # corner detection
-    lowc = lower_corner(masked)
-    highc = highest_corner(masked, lowc)
-    mid = (lowc[0][0]+lowc[1][0])/2+5
+    ll, lr = lower_corner(masked)
+    al, ar = highest_corner(masked, ll, lr)
+    mid = (ll[0]+lr[0])/2+5  # Offset produced slightly better results
     sl, sr = get_weighted_edges(masked, mid)
     ml, mr = get_minima(masked, mid)
-
-    points = np.array([lowc[0], highc[0], sl, ml, mr, sr, highc[1], lowc[1]])
+    points = [ll, al, sl, ml, mr, sr, ar, lr]
+    np_points = np.array(points)
     overlay = image.copy()
-    cv2.fillPoly(overlay, np.int32([points]), (255, 255, 255))
-    image = cv2.addWeighted(overlay, 0.3, image, 0.7, 0)
+    cv2.fillPoly(overlay, np.int32([np_points]), (255, 255, 255))
+    image = cv2.addWeighted(overlay, 0.6, image, 0.4, 0)
     # visualize results
     if visualize:
-        cv2.circle(masked, lowc[0], 3, (255, 0, 0), 3)  # L in paper (blue)
-        cv2.circle(masked, lowc[1], 3, (255, 0, 0), 3)  # L in paper (blue)
-        cv2.circle(masked, highc[0], 3, (128, 128, 0), 3)  # A in paper (blue-green)
-        cv2.circle(masked, highc[1], 3, (128, 128, 0), 3)  # A in paper (blue-green)
-        cv2.circle(masked, sl, 3, (0, 0, 255), 3)  # S in paper (red)
-        cv2.circle(masked, sr, 3, (0, 0, 255), 3)  # S in paper (red)
-        cv2.circle(masked, ml, 3, (0, 128, 128), 3)  # M in paper (olive)
-        cv2.circle(masked, mr, 3, (0, 128, 128), 3)  # M in paper (olive)
+        for p in points:
+            cv2.circle(masked, p, 4, (255, 0, 0), 3)
         cv2.line(masked, (mid, 0), (mid, 10000), (0, 0, 255))
         masked = cv2.addWeighted(overlay, 0.3, masked, 0.7, 0)
         cv2.imshow('original', raw_image)
@@ -141,19 +140,24 @@ def tarvas_geometric(raw_image, visualize):
     return image
 
 
-if __name__ == '__main__':
-    img = cv2.imread('7.jpg', cv2.IMREAD_COLOR)
+def test_image():
+    img = cv2.imread('images/1.jpg', cv2.IMREAD_COLOR)
     tarvas_geometric(img, True)
-    cap = cv2.VideoCapture('vid.mp4')
+
+
+def test_video():
+    cap = cv2.VideoCapture('video/vid2.mp4')
     factor = 1
     while cap.isOpened():
         ret, frame = cap.read()
+        if ret is None or frame is None:
+            break
         try:
             tarvas = frame
             tarvas = tarvas_geometric(frame, False)
             tarvas = cv2.resize(tarvas, (0, 0), fx=factor, fy=factor)
         except:
-            pass
+            print('error')
         cv2.imshow('frame', tarvas)
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
@@ -161,3 +165,5 @@ if __name__ == '__main__':
     cv2.destroyAllWindows()
 
 
+if __name__ == '__main__':
+    test_image()
