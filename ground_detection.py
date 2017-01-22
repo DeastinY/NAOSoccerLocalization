@@ -164,10 +164,15 @@ def test_video():
     cap.release()
     cv2.destroyAllWindows()
 
+def get_mask(image):
+    _, stored_masked = tarvas_geometric(image, False)
+    return stored_masked
+
 stored_masked = None
 def analyse_image(image):
     global stored_masked
     _, stored_masked = tarvas_geometric(image, False)
+
 
 def check_point(x, y):
     global stored_masked
@@ -175,7 +180,6 @@ def check_point(x, y):
         return True
     else:
         return False
-
 
 
 if __name__ == '__main__':
