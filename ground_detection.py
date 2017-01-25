@@ -40,7 +40,7 @@ def lower_corner(image):
 def highest_corner(image, ll, lr):
     """This algorithm checks the pixels above the low corner points whether a colored pixel can be found within
     the snap square of 20 pixels. The highest of those pixels are then returned. """
-    epsilon_snap = 20  # magic number 20 from pape
+    epsilon_snap = 20  # magic number 20 from paper
     results = []
     for l in (ll, lr):
         x, y = l
@@ -95,7 +95,7 @@ def color_treshold(image):
     # color thresholding
     image_hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
     color = 145 // 2  # green to hue
-    dx = 30
+    dx = 30  # worked good in testing, try 10 for more strict separation
     lower_green = np.array([max(0, color-dx), 100, 100])
     upper_green = np.array([max(0, color+dx), 255, 255])
     mask = cv2.inRange(image_hsv, lower_green, upper_green)
@@ -110,6 +110,7 @@ def smooth_image(image):
     image = cv2.dilate(image, kernel)
     return image
 
+
 def tarvas_geometric(raw_image, visualize):
     f = 0.3  # in the paper 1/3 is used
     image = cv2.resize(raw_image, (0, 0), fx=f, fy=f)
@@ -118,7 +119,7 @@ def tarvas_geometric(raw_image, visualize):
     masked = cv2.bitwise_and(image, image, mask=mask)
     ll, lr = lower_corner(masked)
     al, ar = highest_corner(masked, ll, lr)
-    mid = (ll[0]+lr[0])/2+5  # Offset produced slightly better results
+    mid = (ll[0]+lr[0])/2+5  # Offset of +5 produced slightly better results in some examples
     sl, sr = get_weighted_edges(masked, mid)
     ml, mr = get_minima(masked, mid)
     points = [ll, al, sl, ml, mr, sr, ar, lr]
@@ -141,12 +142,12 @@ def tarvas_geometric(raw_image, visualize):
 
 
 def test_image():
-    img = cv2.imread('images/1.jpg', cv2.IMREAD_COLOR)
+    img = cv2.imread('images/sample.png', cv2.IMREAD_COLOR)  # change image here
     tarvas_geometric(img, True)
 
 
 def test_video():
-    cap = cv2.VideoCapture('video/vid2.mp4')
+    cap = cv2.VideoCapture('video/vid2.mp4')  #  change video here
     factor = 1
     while cap.isOpened():
         ret, frame = cap.read()
@@ -164,11 +165,13 @@ def test_video():
     cap.release()
     cv2.destroyAllWindows()
 
-def get_mask(image):
-    _, stored_masked = tarvas_geometric(image, False)
-    return stored_masked
-
 stored_masked = None
+
+
+def get_mask(image):
+    return tarvas_geometric(image, False)[1]
+
+
 def analyse_image(image):
     global stored_masked
     _, stored_masked = tarvas_geometric(image, False)
@@ -183,6 +186,7 @@ def check_point(x, y):
 
 
 if __name__ == '__main__':
-    #test_image()
-    analyse_image(cv2.imread('images/1.jpg', cv2.IMREAD_COLOR))
-    print(check_point(0, 0))
+    test_image()
+    #test_video()
+    #analyse_image(cv2.imread('images/sample.png', cv2.IMREAD_COLOR))
+    #print(check_point(0, 0))
